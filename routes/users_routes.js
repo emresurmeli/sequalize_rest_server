@@ -3,7 +3,9 @@
 var bodyparser = require('body-parser');
 var User = require('../models/Users');
 var Sql = require('sequelize');
-var sql = new Sql();
+var sql = new Sql(process.env.PG_DATABASE, process.env.PG_USER, process.env.PG_PASSWORD, {
+	dialect: 'postgres'
+});
 
 module.exports = function(router) {
 	// Use body parser to recieve JSON
