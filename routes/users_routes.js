@@ -3,7 +3,7 @@
 var bodyparser = require('body-parser');
 var User = require('../models/Users');
 var Sql = require('sequelize');
-var sql = new Sql(process.env.PG_DATABASE, process.env.PG_USER, process.env.PG_PASSWORD, {
+var sql = new Sql(process.env.PG_DATABASE, process.env.PG_USER, process.env.PG_PASS, {
 	dialect: 'postgres'
 });
 
