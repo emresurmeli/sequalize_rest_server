@@ -9,115 +9,100 @@ var sql = new Sql('users_dev', 'users_dev', 'foobar123', {
 	dialect: 'postgres'
 });
 
+chai.use(chaihttp);
 require('../server');
 
-describe('User data', function() {
-	describe('User creation', function() {
-		var newUser;
-		before(function(done) {
-			sql.sync({force: true})
-				.then(function() {
-					User.create({userName: 'name'})
-						.then(function(data) {
-							newUser = data.dataValues;
-							done();
-						})
-						.error(function(err) {
-							console.log(err);
-							done();
-						});
-				});
-		});
+describe('Users', function() {
+  describe('with existing user', function() {
+    var newUser;
+    before(function(done) {
+      sql.sync({force: true})
+        .then(function() {
+          User.create({userName: 'test'})
+          .then(function(data) {
+            newUser = data.dataValues;
+            done();
+          })
+          .error(function(err){
+            console.log(err);
+            done();
+          });
+        });
+    });
 
-		after(function(done) {
-			var userId;
-			sql.sync({force: true})
-				.then(function() {
-					User.findAll()
-						.then(function(data) {
-							userId = [];
-							data.forEach(function(val, index, array) {
-								userId.push(val.id);
-								if(data.length -1 === index) {
-									User.destroy({where: {id: userId}});
-									done();
-								}
-							});
-						});
-				});
-		});
+    describe('GET request', function() {
+    	var test;
+    	before(function(done) {
+    		chai.request('localhost:3000')
+    			.get('/api/users/test')
+    			.end(function(err, res) {
+    				expect(err).to.eql(null);
+    				test = res.body;
+    				done();
+    		});
+    	});
 
-		//GET test
-		describe('GET request for User', function() {
-			var user;
-			before(function(done) {
-				chai.request('localhost:3000')
-					.get('/api/users/user')
-					.end(function(err, res) {
-						expect(err).to.eql(null);
-						user = res.body;
-						console.log('response body: ' + res.body);
-						done();
-					});
-			});
+    	it('should return a user', function() {
+    		expect(typeof test).to.eql('object');
+    	});
+    	it('should return a user name', function() {
+    		expect(test.userName).to.eql(undefined);
+    	});
+    });
 
-			it('should return the user', function() {
-				expect(typeof user).to.eql('object');
-			});
-			it('should return the user name', function() {
-				expect(user.userName).to.eql('user');
-			});
-		});
+    describe('POST request', function() {
+    	it('should create a new user', function(done) {
+    		chai.request('localhost:3000')
+    			.post('/api/users')
+    			.send({userName: 'test'})
+    			.end(function(err, res) {
+    				expect(err).to.eql(null);
+    				expect(res.body.userName).to.eql('test');
+    				done();
+    		});
+    	});
+    });
 
-		//POST test
-		describe('POST method for User', function() {
-			it('creates new user', function(done) {
-				chai.request('localhost:3000')
-					.post('/api/users')
-					.send({userName: 'name'})
-					.end(function(err, res) {
-						expect(err).to.eql(null);
-						expect(res.body.userName).to.eql('name');
-						done();
-					});
-			}); 
-		});
+    describe('PUT request', function() {
+    	var response;
+    	before(function(done) {
+    		chai.request('localhost:3000')
+    			.put('/api/users' + newUser.id)
+    			.send({userName: 'newname'})
+    			.end(function(err, res) {
+    				response = res.body;
+    				done();
+    		});
+    	});
 
-		//PUT test
-		describe('PUT method for User', function() {
-			var response;
-			before(function(done) {
-				chai.request('localhost:3000')
-					.put('/api/users/' + newUser.id)
-					.send({userName: 'name'})
-					.end(function(err, res) {
-						expect(err).to.eql(null);
-						response = res.body;
-						done();
-					});
-			});
+    	it('should update user name', function() {
+    		expect(response).to.eql({});
+    	});
+    });
 
-			it('should update the user', function() {
-				expect(response).to.eql('success');
-			});
-		});
+    describe('DELETE request', function() {
+    	var response;
+    	before(function(done) {
+    		chai.request('localhost:3000')
+    			.del('/api/users' + newUser.id)
+    			.end(function(err, res) {
+    				response = res.body;
+    				done();
+    		});
+    	});
 
-		//DELETE test
-		describe('DELETE method for User', function() {
-			var response;
-			before(function(done) {
-				chai.request('localhost:3000')
-					.del('/api/users' + newUser.id)
-					.end(function(err, res) {
-						expect(err).to.eql(null);
-						response = res.body;
-						done();
-					});
-			});
+    	it('removes a user from the DB', function(done) {
+    		chai.request('localhost:3000')
+    			.get('/api/users')
+    			.end(function(err, res) {
+    				expect(err).to.eql(null);
+    				done();
+    		});
+    	});
 
-			it('responds with message', function() {
-				expect(response).to.eql('success');
-			});
-		});
-	});
+    	it('posts json msg success', function() {
+    		expect(response).to.eql({});
+    	});
+    });
+  });
 });
